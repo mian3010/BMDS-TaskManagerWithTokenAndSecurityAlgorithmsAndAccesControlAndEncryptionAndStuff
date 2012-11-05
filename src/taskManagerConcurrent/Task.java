@@ -16,6 +16,8 @@ import javax.xml.bind.annotation.XmlRootElement;
     public class Task implements Serializable{
     	private static final long serialVersionUID = 7526472295622771337L;
     	
+    	public Task() {}
+    	
     	/**
     	 * An alternative to the empty constructor in Rao's code snippet
     	 * @param id The ID of the Task

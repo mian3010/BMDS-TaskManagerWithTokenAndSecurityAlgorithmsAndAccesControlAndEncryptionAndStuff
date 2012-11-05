@@ -1,8 +1,11 @@
 package utils;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Scanner;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -53,6 +56,7 @@ public class JaxbUtils {
 			TaskList taskList = (TaskList) jaxbContext.createUnmarshaller().unmarshal(is);
 			return taskList;
 		} catch (JAXBException ex) {
+		  ex.printStackTrace();
 			System.err.println(ex.getMessage());
 		}
 		return null;
@@ -97,6 +101,39 @@ public class JaxbUtils {
 		}
 		return null;
 	}
+	
+	private static String readFile(File file) throws IOException {
+    StringBuilder fileContents = new StringBuilder((int)file.length());
+    Scanner scanner = new Scanner(file);
+    String lineSeparator = System.getProperty("line.separator");
+
+    try {
+        while(scanner.hasNextLine()) {        
+            fileContents.append(scanner.nextLine() + lineSeparator);
+        }
+        return fileContents.toString();
+    } finally {
+        scanner.close();
+    }
+  }
+	
+	public static TaskList xmlToTaskList(File file){  
+	  String xmlData = "";
+    try {
+      xmlData = readFile(file);
+    } catch (IOException e) {
+      System.out.println("Could not find file.");
+      System.out.println(e);
+      try {
+        file.createNewFile();
+      } catch (IOException e1) {
+        System.out.println("Error creating file.");
+        System.exit(-1);
+      }
+    }
+    TaskList taskList = JaxbUtils.xmlToTaskList(xmlData);
+    return taskList;
+  }
 	
 //	public static void main(String[] args) {
 //		

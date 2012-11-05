@@ -1,0 +1,75 @@
+
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cal>
+    <users>
+        <user>
+            <name>rao</name>
+            <password>lab</password>
+        </user>
+        <user>
+            <name>Thomas</name>
+            <password>teach</password>
+        </user>
+        <user>
+            <name>TA-01</name>
+            <password>help</password>
+        </user>
+        <user>
+            <name>student-01</name>
+            <password>study</password>
+        </user>
+        <user>
+            <name>student-02</name>
+            <password>study</password>
+        </user>
+    </users>
+    <tasks>
+        <task id="handin-01" name="Submit assignment-01" date="17-09-2012" status="not-executed" required="false">
+            <description>
+                Work on mandatory assignment and send hand-in to Rao.
+            </description>
+            <attendants>student-01, student-02</attendants>
+            <conditions></conditions>
+            <responses>review-01</responses>
+
+        </task>
+        <task id="review-01" name="Review and check assignment" date="19-09-2012" status="not-executed" required="false">
+            <description>
+                Check the assignment send by students and decide whether to approve or 
+                ask them to re-submit the assignment. 
+            </description>
+            <attendants>TA-01, Rao</attendants>
+            <conditions>handin-01</conditions>
+            <responses></responses>
+
+        </task>
+        <task id="reject-01" name="ask to resubmit the assignment" date="24-09-2012" status="not-executed" required="false">
+            <description>
+                Ask students to resubmit assignment by providing necessary feedback.
+            </description>
+            <attendants>TA-01, Rao</attendants>
+            <conditions>review-01</conditions>
+            <responses>handin-01</responses>
+
+        </task>
+        <task id="approve-01" name="mandatory assignment 01 approved" date="24-09-2012" status="not-executed" required="false">
+            <description>
+                Approve mandatory assignment 01 and inform students.
+            </description>
+            <attendants>TA-01, Rao</attendants>
+            <conditions>review-01, handin-01</conditions>
+            <responses></responses>
+
+        </task>
+        
+        <task id="qualify-for-exam" name="qualify for written exam" date="10-12-2012" status="not-executed" required="false">
+            <description>
+                Qualify students to take up written exam.
+            </description>
+            <attendants>Thomas</attendants>
+            <conditions>approve-01, handin-01</conditions>
+            <responses></responses>
+
+        </task>
+    </tasks>
+</cal>
