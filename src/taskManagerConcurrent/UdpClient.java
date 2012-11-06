@@ -51,8 +51,7 @@ public class UdpClient {
    * @param user
    * @param taskName
    */
-  public static void sendUdpTaskRequest(String address, int port, String user,
-      String taskName) {
+  public static void sendUdpTaskRequest(String address, int port, String user, String taskName) {
     byte[] msg = (user + "\n" + taskName).getBytes();
     try (DatagramSocket sock = new DatagramSocket()) {
       // Send message
