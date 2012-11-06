@@ -1,21 +1,31 @@
 package taskManagerConcurrent;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.util.ArrayList;
 
 import utils.JaxbUtils;
 
 public class UdpServer {
   private static File calendarfile = new File("calendar.xml");
-  private TaskList taskList;
+  private TaskList taskList = null;
 
   public UdpServer() {
-    taskList = JaxbUtils.xmlToTaskList(calendarfile);
+    try {
+      taskList = JaxbUtils.xmlToTaskList(calendarfile);
+    } catch (FileNotFoundException e1) {
+      try {
+        System.out.println("File not found. Attempting to create...");
+        calendarfile.createNewFile();
+      } catch (IOException e) {
+        System.out.println("Could not create file");
+        System.exit(-1);
+      }
+    }
 
     try (DatagramSocket sock = new DatagramSocket(6789)) {
       while (true) { // FUR EVURR
@@ -30,9 +40,9 @@ public class UdpServer {
         new Thread(new MessageHandler(next)).start();
       }
     } catch (SocketException e) {
-
+      e.printStackTrace();
     } catch (IOException e) {
-
+      e.printStackTrace();
     }
   }
 
@@ -67,14 +77,14 @@ public class UdpServer {
       // msgParts[0] = userID
       // msgParts[1] = taskID
       String[] msgParts = container.getMessage().split("\n");
-      ArrayList<Task> tasks = (ArrayList<Task>) taskList.getList();
       Task task = taskList.getTask(msgParts[1].trim());
 
       if (task == null) { // no task found
         container.setMessage("Task not found");
-      }if (startTask(task)) {
+      } else if (startTask(task)) {
         setResponses(task);
         endTask(task);
+        container.setMessage("Task " + task.id + " has been executed");
       }
 
       // Send message back
@@ -86,18 +96,19 @@ public class UdpServer {
 
       }
     }
-    
+
     private boolean startTask(Task task) {
-      if(taskList.conditionsCheck(task)){ // conditions met
+      if (taskList.conditionsCheck(task)) { // conditions met
         synchronized (task) {
-          if(task.status.equals("not-executed")){
+          if (task.status.equals("not-executed")) {
             task.status = "running";
             return true;
-          }else{
-            container.setMessage("Task not executable. Task status: " + task.status);
+          } else {
+            container.setMessage("Task not executable. Task status: "
+                + task.status);
           }
         }
-      }else{
+      } else {
         container.setMessage("Task not executable. Conditions not met.");
       }
       return false;
@@ -113,6 +124,7 @@ public class UdpServer {
           Task taskResponse = taskList.getTask(s);
           synchronized (taskResponse) {
             taskResponse.required = true;
+            taskResponse.status = "not-executed";
           }
         }
       }
@@ -123,13 +135,18 @@ public class UdpServer {
         task.status = "executed";
         task.required = false;
       }
+      save();
     }
-    
+
     /**
      * Save taskList to XML
      */
     private void save() {
-      JaxbUtils.taskListToXml(taskList);
+      synchronized (taskList) {
+        synchronized (calendarfile) {
+          JaxbUtils.taskListToXml(taskList, calendarfile);
+        }
+      }
     }
   }
 

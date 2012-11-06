@@ -2,10 +2,13 @@ package utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
-import java.util.Scanner;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -45,13 +48,14 @@ public class JaxbUtils {
 	 * Creates a TaskList from a given xml-string. Returns null if an error is encountered.
 	 * @param xml The xml to unmarshall
 	 * @return The TaskList given from the xml
+	 * @throws FileNotFoundException 
 	 */
-	public static TaskList xmlToTaskList(String xml) {
+	public static TaskList xmlToTaskList(File file) throws FileNotFoundException {
 		try {
 			//Create marshaller context
 			JAXBContext jaxbContext = JAXBContext.newInstance(TaskList.class);
 			//Convert XML string to inputstream
-			InputStream is = new ByteArrayInputStream(xml.getBytes());
+			InputStream is = new FileInputStream(file);
 			//Unmarshall task from the inputstream
 			TaskList taskList = (TaskList) jaxbContext.createUnmarshaller().unmarshal(is);
 			return taskList;
@@ -87,53 +91,17 @@ public class JaxbUtils {
 	 * @param taskList The TaskList to marshall
 	 * @return The xml given from the TaskList
 	 */
-	public static String taskListToXml(TaskList taskList) {
-		try {
+	public static String taskListToXml(TaskList taskList, File file) {
+		try (OutputStream os = new FileOutputStream(file)) {
 			//Create marshaller context
 			JAXBContext jaxbContext = JAXBContext.newInstance(TaskList.class);
-			//Create an Stringwriter to marshall into
-			StringWriter writer = new StringWriter();
-			//Marshall into the writer
-			jaxbContext.createMarshaller().marshal(taskList, writer);
-			return writer.toString();
-		} catch (JAXBException ex) {
+			//Marshall into the file
+			jaxbContext.createMarshaller().marshal(taskList, os);
+		} catch (JAXBException | IOException ex) {
 			System.err.println(ex.getMessage());
 		}
 		return null;
 	}
-	
-	private static String readFile(File file) throws IOException {
-    StringBuilder fileContents = new StringBuilder((int)file.length());
-    Scanner scanner = new Scanner(file);
-    String lineSeparator = System.getProperty("line.separator");
-
-    try {
-        while(scanner.hasNextLine()) {        
-            fileContents.append(scanner.nextLine() + lineSeparator);
-        }
-        return fileContents.toString();
-    } finally {
-        scanner.close();
-    }
-  }
-	
-	public static TaskList xmlToTaskList(File file){  
-	  String xmlData = "";
-    try {
-      xmlData = readFile(file);
-    } catch (IOException e) {
-      System.out.println("Could not find file.");
-      System.out.println(e);
-      try {
-        file.createNewFile();
-      } catch (IOException e1) {
-        System.out.println("Error creating file.");
-        System.exit(-1);
-      }
-    }
-    TaskList taskList = JaxbUtils.xmlToTaskList(xmlData);
-    return taskList;
-  }
 	
 //	public static void main(String[] args) {
 //		

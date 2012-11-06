@@ -52,7 +52,7 @@ public class TaskList implements Serializable {
     Task task = null;
     for (Task t : list) {
       if (t.id.equals(id)) {
-        if (!t.status.equals("executed")) task = t;
+        task = t;
         break;
       }
     }
