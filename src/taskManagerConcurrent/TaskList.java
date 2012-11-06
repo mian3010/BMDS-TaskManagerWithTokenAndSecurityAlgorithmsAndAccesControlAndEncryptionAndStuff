@@ -27,6 +27,11 @@ public class TaskList implements Serializable {
     this.list = list;
   }
 
+  /**
+   * Check that the conditions of a task has been met
+   * @param task The task in question
+   * @return Whether or not conditions have been met
+   */
   public boolean conditionsCheck(Task task) {
     boolean condition = true;
 
@@ -43,10 +48,20 @@ public class TaskList implements Serializable {
     return condition;
   }
 
+  /**
+   * Running the correct search algorithm for finding a task
+   * @param id The id of the task to find
+   * @return The task if exists, or null otherwise
+   */
   public Task getTask(String id) {
     return getTaskSQESA(id);
   }
 
+  /**
+   * Runs our SQESA algorithm for finding a task from id
+   * @param id The id of the task to find
+   * @return The task if exists, or null otherwise
+   */
   private Task getTaskSQESA(String id) {
     // Super Quickly Efficient Search Algorithm (SQESA)
     Task task = null;

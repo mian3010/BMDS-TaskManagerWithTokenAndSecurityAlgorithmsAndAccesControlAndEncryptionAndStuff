@@ -14,6 +14,10 @@ public class UdpServer {
   private static File calendarfile = new File("calendar.xml");
   private TaskList taskList = null;
 
+  /**
+   * Constructor. Runs the server, listening for UPD requests.
+   * Creates a new thread for executing tasks when requests are recieved
+   */
   public UdpServer() {
     try {
       taskList = JaxbUtils.xmlToTaskList(calendarfile);
@@ -47,6 +51,9 @@ public class UdpServer {
     }
   }
 
+  /**
+   * Containing the UDP message
+   */
   private class UdpMessage {
     public final InetAddress address;
     public final int port;
@@ -67,13 +74,20 @@ public class UdpServer {
     }
   }
 
+  /**
+   * Handling the execution of a task
+   */
   private class MessageHandler implements Runnable {
     private UdpMessage container;
 
     public MessageHandler(UdpMessage container) {
       this.container = container;
     }
-
+    /**
+     * The methods that executes the task by checking that it exists,
+     * and that conditions have been met.
+     * It also sets the required flag on responses
+     */
     public void run() {
       // msgParts[0] = userID
       // msgParts[1] = taskID
@@ -97,7 +111,11 @@ public class UdpServer {
 
       }
     }
-
+    /**
+     * First step in executing a task. Check conditions and set status to running
+     * @param task The task in question
+     * @return Whether or not conditions have been met
+     */
     private boolean startTask(Task task) {
       if (taskList.conditionsCheck(task)) { // conditions met
         synchronized (task) {
@@ -115,6 +133,10 @@ public class UdpServer {
       return false;
     }
 
+    /**
+     * Set the required flag on responses
+     * @param task The task in question
+     */
     private void setResponses(Task task) {
       // Send responses
       String resp = task.responses;
@@ -131,6 +153,10 @@ public class UdpServer {
       }
     }
 
+    /**
+     * The final step in executing a task. Set required and status
+     * @param task The tash in question
+     */
     private void endTask(Task task) {
       synchronized (task) {
         task.status = "executed";
@@ -151,6 +177,13 @@ public class UdpServer {
     }
   }
 
+  /**
+   * Return the next message from socket
+   * @param sock The socket
+   * @param buffer The buffer
+   * @return The next message
+   * @throws IOException
+   */
   public UdpMessage getNextMessage(DatagramSocket sock, byte[] buffer)
       throws IOException {
     DatagramPacket request = new DatagramPacket(buffer, buffer.length);
@@ -160,6 +193,12 @@ public class UdpServer {
     return msg;
   }
 
+  /**
+   * Sends a message over socket
+   * @param sock The socket
+   * @param message The message
+   * @throws IOException
+   */
   public void sendMessage(DatagramSocket sock, UdpMessage message)
       throws IOException {
     byte[] msg = message.getMessage().getBytes();
