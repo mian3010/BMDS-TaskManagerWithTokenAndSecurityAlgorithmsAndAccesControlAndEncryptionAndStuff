@@ -28,6 +28,7 @@ public class UdpServer {
     }
 
     try (DatagramSocket sock = new DatagramSocket(6789)) {
+      System.out.println("Server running...");
       while (true) { // FUR EVURR
         byte[] buffer = new byte[1000]; // clear buffer each message, otherwise
                                         // old message remains
