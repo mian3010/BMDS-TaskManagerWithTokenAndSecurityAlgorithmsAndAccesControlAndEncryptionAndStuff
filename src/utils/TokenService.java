@@ -19,27 +19,37 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
 /**
- * 
+ * Class has static methods regarding Tokens and encryption/decryption of these. 
  * @author Claus - clih@itu.dk
  * @author Michael - msoa@itu.dk
+ * @author BieberFever
  *
  */
 public class TokenService {
   public static byte[] getToken(byte[] credentials) {
     try {
       String credentialsStr;
+      // Decrypt bytes to String 
       credentialsStr = Encrypter.decryptByteArray(credentials);
+      // Split into user and password
       String[] split = credentialsStr.split(",");
       String user = split[0];
       String pass = split[1];
+      
+      // Authenticate credentials via ITU
+      // Method returns timestamp
       long ts = 0;
       ts = ItuAuthentication.authenticate(user, pass);
+      // Create and dobbel encrypt
+      // getToken returns an encryptet token
       Token tk = new Token(user, ts);
       return Encrypter.encryptString(new String(tk.getToken()));
     } catch (JSchException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
       return null;
     }
   }
+  
+  // HashMap linking names to roles
   private static final Map<String, String> roleMap;
   static
   {
@@ -49,19 +59,36 @@ public class TokenService {
       roleMap.put("TA-01", "TA");
   }
 
+  /**
+   * Static class for authenticating with ITU service 
+   *
+   */
   private static class ItuAuthentication {
+    /**
+     * 
+     * @param user 
+     * @param password
+     * @return Timstamp as long
+     * @throws JSchException
+     */
     public static long authenticate(String user, String password) throws JSchException {
       String host = "ssh.itu.dk";
       JSch jsch = new JSch();
+      // Add to known hosts
       String fs = File.separator;
       jsch.setKnownHosts(System.getProperty("user.home")+fs+".ssh"+fs+"known_hosts");
       Session session;
       session = jsch.getSession(user, host, 22);
       session.setPassword(password);
+      // Return timestamp as long
       return System.currentTimeMillis();
     }
   }
   
+  /**
+   * A Token describes an authenticated user and the time of authentication.  
+   *
+   */
   private static class Token {
     private String user;
     private long timeStamp;
@@ -71,6 +98,10 @@ public class TokenService {
       this.timeStamp = timeStamp;
     }
     
+    /**
+     * 
+     * @return Encrypted token
+     */
     public byte[] getToken(){
       try {
         return Encrypter.encryptString(getRole()+","+timeStamp, Encrypter.generateKeyFromString("TokenServerKey"));
@@ -78,28 +109,64 @@ public class TokenService {
         return null;
       }
     }
-    
+   
+    /**
+     * 
+     * @return The role of the user
+     */
     private String getRole() {
       if (roleMap.containsKey(user)) return roleMap.get(user);
       else return "STUDENT";
     }
   }
+  
+  /**
+   * Encrypt stuff 
+   *
+   */
   private static class Encrypter {
     private static final byte[] symKeyData = DatatypeConverter.parseHexBinary("ClientTokenKey");
     private static final SecretKeySpec desKey = new SecretKeySpec(symKeyData, "AES");
     
+    /**
+     * 
+     * @param str String as seed
+     * @return SecretKey
+     */
     private static SecretKey generateKeyFromString(String str) {
       final byte[] symKeyData = DatatypeConverter.parseHexBinary(str);
       final SecretKeySpec desKey = new SecretKeySpec(symKeyData, "AES");
       return desKey;
     }
+    
+    /**
+     * 
+     * @param str
+     * @return str in encrypted byte-array
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     * @throws InvalidKeyException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     */
     private static byte[] encryptString(String str) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException{
       return encryptString(str, desKey);
     }
+    
+    /**
+     * 
+     * @param str
+     * @param desKey
+     * @return str in encrypted byte-array
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     * @throws InvalidKeyException
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     */
     private static byte[] encryptString(String str, SecretKey desKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException{
+      // Create the cipher
       Cipher desCipher;
-
-      // Create the cipher 
       desCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
       
       // Initialize the cipher for encryption
@@ -114,6 +181,16 @@ public class TokenService {
       return ciphertext;
     }
     
+    /**
+     * 
+     * @param arr Byte-array to be decrypted
+     * @return String
+     * @throws IllegalBlockSizeException
+     * @throws BadPaddingException
+     * @throws InvalidKeyException
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchPaddingException
+     */
     private static String decryptByteArray(byte[] arr) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
       Cipher desCipher;
       desCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
