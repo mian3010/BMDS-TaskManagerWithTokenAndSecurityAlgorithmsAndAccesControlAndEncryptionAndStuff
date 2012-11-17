@@ -26,6 +26,14 @@ import com.jcraft.jsch.Session;
  *
  */
 public class TokenService {
+  /**
+   * Public method for retrieving a Token.
+   * The Token is encrypted.
+   * A Token describes an authenticated user and when the authentication was done.
+   * @param credentials
+   * @return Encrypted Token
+   * @return Returns null if authentication failed
+   */
   public static byte[] getToken(byte[] credentials) {
     try {
       String credentialsStr;
