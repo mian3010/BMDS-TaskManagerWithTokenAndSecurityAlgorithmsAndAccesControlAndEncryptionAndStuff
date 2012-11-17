@@ -1,130 +1,128 @@
 package utils;
 
-import com.jcraft.jsch.*;
-import javax.swing.*;
+import java.io.File;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.bind.DatatypeConverter;
+
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
+
+/**
+ * 
+ * @author Claus - clih@itu.dk
+ * @author Michael - msoa@itu.dk
+ *
+ */
 public class TokenService {
-  /* -*-mode:java; c-basic-offset:2; indent-tabs-mode:nil -*- */
-  /**
-   * This program enables you to connect to sshd server and get the shell
-   * prompt. $ CLASSPATH=.:../build javac Shell.java $ CLASSPATH=.:../build java
-   * Shell You will be asked username, hostname and passwd. If everything works
-   * fine, you will get the shell prompt. Output will be ugly because of lacks
-   * of terminal-emulation, but you can issue commands.
-   * 
-   */
-
-  public static void main(String[] arg) {
+  public static byte[] getToken(byte[] credentials) {
     try {
-      JSch jsch = new JSch();
-
-      // jsch.setKnownHosts("/home/foo/.ssh/known_hosts");
-
-      String host = null;
-      if (arg.length > 0) {
-        host = arg[0];
-      } else {
-        host = JOptionPane.showInputDialog("Enter username@hostname",
-            System.getProperty("user.name") + "@localhost");
-      }
-      String user = host.substring(0, host.indexOf('@'));
-      host = host.substring(host.indexOf('@') + 1);
-
-      Session session = jsch.getSession(user, host, 22);
-
-      String passwd = JOptionPane.showInputDialog("Enter password");
-      session.setPassword(passwd);
-
-      UserInfo ui = new MyUserInfo() {
-        public void showMessage(String message) {
-          JOptionPane.showMessageDialog(null, message);
-        }
-
-        public boolean promptYesNo(String message) {
-          Object[] options = { "yes", "no" };
-          int foo = JOptionPane.showOptionDialog(null, message, "Warning",
-              JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null,
-              options, options[0]);
-          return foo == 0;
-        }
-
-        // If password is not given before the invocation of Session#connect(),
-        // implement also following methods,
-        // * UserInfo#getPassword(),
-        // * UserInfo#promptPassword(String message) and
-        // * UIKeyboardInteractive#promptKeyboardInteractive()
-
-      };
-
-      session.setUserInfo(ui);
-
-      // It must not be recommended, but if you want to skip host-key check,
-      // invoke following,
-      // session.setConfig("StrictHostKeyChecking", "no");
-
-      // session.connect();
-      session.connect(30000); // making a connection with timeout.
-
-      Channel channel = session.openChannel("shell");
-
-      // Enable agent-forwarding.
-      // ((ChannelShell)channel).setAgentForwarding(true);
-
-      channel.setInputStream(System.in);
-      /*
-       * // a hack for MS-DOS prompt on Windows. channel.setInputStream(new
-       * FilterInputStream(System.in){ public int read(byte[] b, int off, int
-       * len)throws IOException{ return in.read(b, off, (len>1024?1024:len)); }
-       * });
-       */
-
-      channel.setOutputStream(System.out);
-
-      /*
-       * // Choose the pty-type "vt102".
-       * ((ChannelShell)channel).setPtyType("vt102");
-       */
-
-      /*
-       * // Set environment variable "LANG" as "ja_JP.eucJP".
-       * ((ChannelShell)channel).setEnv("LANG", "ja_JP.eucJP");
-       */
-
-      // channel.connect();
-      channel.connect(3 * 1000);
-    } catch (Exception e) {
-      System.out.println(e);
+      String credentialsStr;
+      credentialsStr = Encrypter.decryptByteArray(credentials);
+      String[] split = credentialsStr.split(",");
+      String user = split[0];
+      String pass = split[1];
+      long ts = 0;
+      ts = ItuAuthentication.authenticate(user, pass);
+      Token tk = new Token(user, ts);
+      return Encrypter.encryptString(new String(tk.getToken()));
+    } catch (JSchException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
+      return null;
     }
   }
+  private static final Map<String, String> roleMap;
+  static
+  {
+      roleMap = new HashMap<>();
+      roleMap.put("Rao", "TEACHER");
+      roleMap.put("Thomas", "TEACHER");
+      roleMap.put("TA-01", "TA");
+  }
 
-  public static abstract class MyUserInfo implements UserInfo,
-      UIKeyboardInteractive {
-    public String getPassword() {
-      return null;
+  private static class ItuAuthentication {
+    public static long authenticate(String user, String password) throws JSchException {
+      String host = "ssh.itu.dk";
+      JSch jsch = new JSch();
+      String fs = File.separator;
+      jsch.setKnownHosts(System.getProperty("user.home")+fs+".ssh"+fs+"known_hosts");
+      Session session;
+      session = jsch.getSession(user, host, 22);
+      session.setPassword(password);
+      return System.currentTimeMillis();
     }
-
-    public boolean promptYesNo(String str) {
-      return false;
+  }
+  
+  private static class Token {
+    private String user;
+    private long timeStamp;
+    
+    public Token(String user, long timeStamp){
+      this.user = user;
+      this.timeStamp = timeStamp;
     }
-
-    public String getPassphrase() {
-      return null;
+    
+    public byte[] getToken(){
+      try {
+        return Encrypter.encryptString(getRole()+","+timeStamp, Encrypter.generateKeyFromString("TokenServerKey"));
+      } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+        return null;
+      }
     }
-
-    public boolean promptPassphrase(String message) {
-      return false;
+    
+    private String getRole() {
+      if (roleMap.containsKey(user)) return roleMap.get(user);
+      else return "STUDENT";
     }
-
-    public boolean promptPassword(String message) {
-      return false;
+  }
+  private static class Encrypter {
+    private static final byte[] symKeyData = DatatypeConverter.parseHexBinary("ClientTokenKey");
+    private static final SecretKeySpec desKey = new SecretKeySpec(symKeyData, "AES");
+    
+    private static SecretKey generateKeyFromString(String str) {
+      final byte[] symKeyData = DatatypeConverter.parseHexBinary(str);
+      final SecretKeySpec desKey = new SecretKeySpec(symKeyData, "AES");
+      return desKey;
     }
-
-    public void showMessage(String message) {
+    private static byte[] encryptString(String str) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException{
+      return encryptString(str, desKey);
     }
+    private static byte[] encryptString(String str, SecretKey desKey) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException{
+      Cipher desCipher;
 
-    public String[] promptKeyboardInteractive(String destination, String name,
-        String instruction, String[] prompt, boolean[] echo) {
-      return null;
+      // Create the cipher 
+      desCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+      
+      // Initialize the cipher for encryption
+      desCipher.init(Cipher.ENCRYPT_MODE, desKey);
+
+      // Our cleartext
+      byte[] cleartext = str.getBytes();
+
+      // Encrypt the cleartext
+      byte[] ciphertext = desCipher.doFinal(cleartext);
+      
+      return ciphertext;
+    }
+    
+    private static String decryptByteArray(byte[] arr) throws IllegalBlockSizeException, BadPaddingException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+      Cipher desCipher;
+      desCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+      
+      // Initialize the same cipher for decryption
+      desCipher.init(Cipher.DECRYPT_MODE, desKey);
+
+      // Decrypt the ciphertext
+      return new String(desCipher.doFinal(arr));
     }
   }
 }
