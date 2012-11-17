@@ -1,7 +1,14 @@
 package utils;
 
-import com.jcraft.jsch.*;
-import javax.swing.*;
+import java.io.File;
+
+import javax.swing.JOptionPane;
+
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
+import com.jcraft.jsch.UIKeyboardInteractive;
+import com.jcraft.jsch.UserInfo;
 
 public class TokenService {
   /* -*-mode:java; c-basic-offset:2; indent-tabs-mode:nil -*- */
@@ -18,7 +25,8 @@ public class TokenService {
     try {
       JSch jsch = new JSch();
 
-      // jsch.setKnownHosts("/home/foo/.ssh/known_hosts");
+      String fs = File.separator;
+      jsch.setKnownHosts(System.getProperty("user.home")+fs+".ssh"+fs+"known_hosts");
 
       String host = null;
       if (arg.length > 0) {
