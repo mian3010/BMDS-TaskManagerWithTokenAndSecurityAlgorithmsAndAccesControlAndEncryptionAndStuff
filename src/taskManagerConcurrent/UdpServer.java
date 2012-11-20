@@ -125,19 +125,26 @@ public class UdpServer {
 		  
 	  }
       
-	  Task task = taskList.getTask(msgParts[1].trim());
-	  if(token != null && task.role.toLowerCase().trim().equals(role.toLowerCase().trim())) {
-	      
-	      if (task == null) { // no task found
-	        container.setMessage("Task not found");
-	      } else if (startTask(task)) {
+	  Task task = null;
+	  
+	  if(msgParts.length > 1) {
+		  task = taskList.getTask(msgParts[1].trim());
+	  }
+	  if(token != null && task != null && task.role.toLowerCase().trim().equals(role.toLowerCase().trim())) {
+	      if (startTask(task)) {
 	        setResponses(task);
 	        endTask(task);
 	        container.setMessage("Task " + task.id + " has been executed");
 	      }
 	  }
+	  else if(token == null) {
+		  container.setMessage("Invalid token! U HAZ SUX HAXORR (or maybe it is more than 2 mins old).");
+	  }
+	  else if(task == null) {
+		  container.setMessage("Task not found.");
+	  }
 	  else {
-		  container.setMessage("Invalid token! U HAZ SUX HAXORR (or maybe it is more than 2 mins old or you are not allowed access to the task)");
+		  container.setMessage("You do not have access to the task.");
 	  }
 
       // Send message back
