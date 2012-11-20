@@ -23,18 +23,19 @@ import utils.TokenService;
 public class UdpClient {
 
 	private static class RequestManager implements Runnable {
-		private String address, user, task;
+		private String address, task;
+		byte[] token;
 		private int port;
 
-		public RequestManager(String address, int port, String user, String task) {
+		public RequestManager(String address, int port, byte[] token, String task) {
 			this.address = address;
-			this.user = user;
+			this.token = token;
 			this.task = task;
 			this.port = port;
 		}
 
 		public void run() {
-			sendUdpTaskRequest(address, port, user, task);
+			sendUdpTaskRequest(address, port, token, task);
 		}
 	}
 
@@ -86,8 +87,7 @@ public class UdpClient {
 			while (!task.equals("q")) {
 				// System.out.println("Request sent. Reply will be printed upon arrival. Feel free to execute another task.");
 				System.out.println("Sending request...");
-				new Thread(new RequestManager("127.0.0.1", 6789, new String(
-						token), task)).start();
+				new Thread(new RequestManager("127.0.0.1", 6789, token, task)).start();
 				task = sc.nextLine();
 			}
 		}
@@ -99,12 +99,12 @@ public class UdpClient {
 	 * 
 	 * @param address
 	 * @param port
-	 * @param user
+	 * @param token
 	 * @param taskName
 	 */
 	public static void sendUdpTaskRequest(String address, int port,
-			String user, String taskName) {
-		byte[] msg = (user + "\n" + taskName).getBytes();
+			byte[] token, String taskName) {
+		byte[] msg = (new String(token) + "\n" + taskName).getBytes();
 		try (DatagramSocket sock = new DatagramSocket()) {
 			// Send message
 			InetAddress destination = InetAddress.getByName(address);
