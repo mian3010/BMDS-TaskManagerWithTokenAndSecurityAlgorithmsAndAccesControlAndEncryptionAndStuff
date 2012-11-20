@@ -7,12 +7,21 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 
 import utils.JaxbUtils;
 
 public class UdpServer {
   private static File calendarfile = new File("calendar.xml");
   private TaskList taskList = null;
+  private final SecretKeySpec desKey = new SecretKeySpec("toserver".getBytes(), "DES");
 
   /**
    * Constructor. Runs the server, listening for UPD requests.
@@ -38,9 +47,6 @@ public class UdpServer {
                                         // old message remains
         // Get next request
         UdpMessage next = getNextMessage(sock, buffer);
-        String[] msgParts = next.getMessage().split("\n");
-        System.out.println("Received message from " + msgParts[0] + ": "
-            + msgParts[1]);
         // Start thread to handle request and send reply
         new Thread(new MessageHandler(next)).start();
       }
@@ -92,15 +98,47 @@ public class UdpServer {
       // msgParts[0] = userID
       // msgParts[1] = taskID
       String[] msgParts = container.getMessage().split("\n");
-      Task task = taskList.getTask(msgParts[1].trim());
-
-      if (task == null) { // no task found
-        container.setMessage("Task not found");
-      } else if (startTask(task)) {
-        setResponses(task);
-        endTask(task);
-        container.setMessage("Task " + task.id + " has been executed");
-      }
+      byte[] token = msgParts[0].getBytes();
+      //validate token
+      //Do: token = decryptedToken
+		Cipher decryptCipher = null;
+		try {
+			decryptCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+			// Initialize the cipher for encryption
+			decryptCipher.init(Cipher.DECRYPT_MODE, desKey);
+			token = decryptCipher.doFinal(token);
+		}
+		catch(BadPaddingException | IllegalBlockSizeException |
+				NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
+			token = null;
+		}
+		
+		String role = "invalidRole";
+	  if(token != null) {
+		  String tokenString = new String(token);
+		  String[] tokenParts = tokenString.split(",");
+		  role = tokenParts[0];
+		  long timestamp = Long.valueOf(tokenParts[1]);
+		  if(timestamp > (System.currentTimeMillis() + 120000)) { //2 minute old tokens are allowed
+			  token = null;
+		  }
+		  
+	  }
+      
+	  Task task = taskList.getTask(msgParts[1].trim());
+	  if(token != null && task.role.toLowerCase().trim().equals(role.toLowerCase().trim())) {
+	      
+	      if (task == null) { // no task found
+	        container.setMessage("Task not found");
+	      } else if (startTask(task)) {
+	        setResponses(task);
+	        endTask(task);
+	        container.setMessage("Task " + task.id + " has been executed");
+	      }
+	  }
+	  else {
+		  container.setMessage("Invalid token! U HAZ SUX HAXORR (or maybe it is more than 2 mins old or you are not allowed access to the task)");
+	  }
 
       // Send message back
       try (DatagramSocket sock = new DatagramSocket()) {
