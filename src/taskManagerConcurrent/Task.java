@@ -17,6 +17,11 @@ import javax.xml.bind.annotation.XmlRootElement;
     	private static final long serialVersionUID = 7526472295622771337L;
     	
     	/**
+    	 * Empty constructor for use by JAXB
+    	 */
+    	public Task() {}
+    	
+    	/**
     	 * An alternative to the empty constructor in Rao's code snippet
     	 * @param id The ID of the Task
     	 * @param name The name of the Task
