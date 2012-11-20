@@ -90,6 +90,7 @@ public class TokenService {
       Session session;
       session = jsch.getSession(user, host, 22);
       session.setPassword(password);
+      session.setConfig("StrictHostKeyChecking", "no");
       session.connect(1000);
       // Return timestamp as long
       return System.currentTimeMillis();
