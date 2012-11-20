@@ -17,11 +17,6 @@ import javax.xml.bind.annotation.XmlRootElement;
     	private static final long serialVersionUID = 7526472295622771337L;
     	
     	/**
-    	 * Empty constructor for use by JAXB
-    	 */
-    	public Task() {}
-    	
-    	/**
     	 * An alternative to the empty constructor in Rao's code snippet
     	 * @param id The ID of the Task
     	 * @param name The name of the Task
@@ -32,7 +27,7 @@ import javax.xml.bind.annotation.XmlRootElement;
     	 * @param condtitions The tasks which must be completed before this Task
     	 * @param responses The Task, which this Task responds to
     	 */
-    	public Task(String id, String name, String date, String status, boolean required, String description, String attendants, String conditions, String responses){
+    	public Task(String id, String name, String date, String status, boolean required, String description, String attendants, String conditions, String responses, String role){
     		this.id = id;
     		this.name = name;
     		this.date = date;
@@ -42,6 +37,7 @@ import javax.xml.bind.annotation.XmlRootElement;
     		this.attendants = attendants;
     		this.conditions = conditions;
     		this.responses = responses;
+    		this.role = role;
     	}
     	
         @XmlID
@@ -72,6 +68,9 @@ import javax.xml.bind.annotation.XmlRootElement;
         @XmlElement
         public String responses;
         
+        @XmlElement
+        public String role;
+        
         //Overriding equals to help recognize two identical tasks
         @Override
         public boolean equals(Object obj) {
@@ -86,7 +85,8 @@ import javax.xml.bind.annotation.XmlRootElement;
         			this.description.equals(that.description) &&
         			this.attendants.equals(that.attendants) &&
         			this.conditions.equals(that.conditions) &&
-        			this.responses.equals(that.responses);
+        			this.responses.equals(that.responses) &&
+        			this.role.equals(that.role);
         }
         
         //Overriding hashcode to be consistent with equals
@@ -102,6 +102,7 @@ import javax.xml.bind.annotation.XmlRootElement;
             hash = hash * 31 + (attendants == null ? 0 : attendants.hashCode());
             hash = hash * 31 + (conditions == null ? 0 : conditions.hashCode());
             hash = hash * 31 + (responses == null ? 0 : responses.hashCode());
+            hash = hash * 31 + (role == null ? 0 : role.hashCode());
             return hash;
         }
     }
