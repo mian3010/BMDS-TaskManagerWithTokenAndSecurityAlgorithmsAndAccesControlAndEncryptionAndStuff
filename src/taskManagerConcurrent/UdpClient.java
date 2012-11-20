@@ -59,23 +59,25 @@ public class UdpClient {
 			byte[] token = null;
 			String username = null;
 			// Until valid token is found - display error message and try again:
-			for (; token == null; System.out.println("Wrong. Try again.")) {
+			while (token == null) {
 				System.out.print("Username: ");
 				username = sc.nextLine();
 				System.out.print("Password: ");
 				String password = sc.nextLine();
-				// Our cleartext
+				// Our cleartextn
 				byte[] cleartext = (username + "," + password).getBytes();
 
 				try {
 					// Encrypt the cleartext
 					byte[] ciphertext = desCipher.doFinal(cleartext);
 					token = TokenService.getToken(ciphertext);
+					if (token == null) {
+						System.out.println("Wrong. Try again");
+					}
 				} catch (IllegalBlockSizeException | BadPaddingException e) {
 					throw new RuntimeException(e.getMessage());
 				}
 			}
-
 			System.out
 					.println("Hello, "
 							+ username

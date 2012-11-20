@@ -48,12 +48,13 @@ public class TokenService {
       // Method returns timestamp
       long ts = 0;
       ts = ItuAuthentication.authenticate(user, pass);
+      System.out.println("Authenticated");
       // Create and dobbel encrypt
       // getToken returns an encryptet token
       Token tk = new Token(user, ts);
       return Encrypter.encryptString(new String(tk.getToken()));
     } catch (JSchException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | IllegalBlockSizeException | BadPaddingException e) {
-      return null;
+    	return null;
     }
   }
   
@@ -85,9 +86,11 @@ public class TokenService {
       // Add to known hosts
       String fs = File.separator;
       jsch.setKnownHosts(System.getProperty("user.home")+fs+".ssh"+fs+"known_hosts");
+      
       Session session;
       session = jsch.getSession(user, host, 22);
       session.setPassword(password);
+      session.connect(1000);
       // Return timestamp as long
       return System.currentTimeMillis();
     }
