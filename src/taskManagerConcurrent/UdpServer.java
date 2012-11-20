@@ -104,30 +104,30 @@ public class UdpServer {
 		Cipher decryptCipher = null;
 		try {
 			decryptCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
-			// Initialize the cipher for encryption
+			// Initialize the cipher for decryptio, then decrypt
 			decryptCipher.init(Cipher.DECRYPT_MODE, desKey);
 			token = decryptCipher.doFinal(token);
 		}
 		catch(BadPaddingException | IllegalBlockSizeException |
 				NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
-			token = null;
+			token = null; //if decrypt fails, set token to null (it is invalid)
 		}
 		
-		String role = "invalidRole";
-	  if(token != null) {
+		String role = "invalidRole"; //invalid role per default
+	  if(token != null) { //if token was decrypted, get role and timestamp
 		  String tokenString = new String(token);
 		  String[] tokenParts = tokenString.split(",");
 		  role = tokenParts[0];
 		  long timestamp = Long.valueOf(tokenParts[1]);
 		  if(timestamp > (System.currentTimeMillis() + 120000)) { //2 minute old tokens are allowed
-			  token = null;
+			  token = null; //else token is invalid
 		  }
 		  
 	  }
       
 	  Task task = null;
 	  
-	  System.out.println("Received message.");
+	  System.out.println("Received message."); //all received messages prompt the printing of this.
 	  
 	  if(msgParts.length > 1) {
 		  task = taskList.getTask(msgParts[1].trim());
@@ -139,13 +139,13 @@ public class UdpServer {
 	        container.setMessage("Task " + task.id + " has been executed");
 	      }
 	  }
-	  else if(token == null) {
+	  else if(token == null) { //if invalid token
 		  container.setMessage("Invalid token! U HAZ SUX HAXORR (or maybe it is more than 2 mins old).");
 	  }
-	  else if(task == null) {
+	  else if(task == null) { //if invalid task
 		  container.setMessage("Task not found.");
 	  }
-	  else {
+	  else { //else, role must be wrong
 		  container.setMessage("You do not have access to the task.");
 	  }
 

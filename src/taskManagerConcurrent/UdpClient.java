@@ -89,7 +89,7 @@ public class UdpClient {
 					| InvalidKeyException e) {
 				throw new RuntimeException(e.getMessage());
 			}
-			
+			//Actually decrypt token
 			try {
 				token = decryptCipher.doFinal(token);
 			}
