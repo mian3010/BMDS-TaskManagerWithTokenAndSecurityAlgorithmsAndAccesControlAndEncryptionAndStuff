@@ -46,7 +46,6 @@ public class UdpClient {
 		Cipher desCipher = null;
 		try {
 			desCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
-			System.out.println("lol");
 			// Initialize the cipher for encryption
 			desCipher.init(Cipher.ENCRYPT_MODE, desKey);
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException
@@ -79,6 +78,25 @@ public class UdpClient {
 					throw new RuntimeException(e.getMessage());
 				}
 			}
+			
+			//Do: token = decryptedToken
+			Cipher decryptCipher = null;
+			try {
+				decryptCipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
+				// Initialize the cipher for encryption
+				decryptCipher.init(Cipher.DECRYPT_MODE, desKey);
+			} catch (NoSuchAlgorithmException | NoSuchPaddingException
+					| InvalidKeyException e) {
+				throw new RuntimeException(e.getMessage());
+			}
+			
+			try {
+				token = decryptCipher.doFinal(token);
+			}
+			catch(BadPaddingException | IllegalBlockSizeException e) {
+				throw new RuntimeException(e.getMessage());
+			}
+			
 			System.out
 					.println("Hello, "
 							+ username
