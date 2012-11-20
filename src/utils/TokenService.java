@@ -112,7 +112,7 @@ public class TokenService {
      */
     public byte[] getToken(){
       try {
-        return Encrypter.encryptString(getRole()+","+timeStamp, Encrypter.generateKeyFromString("TokenServerKey"));
+        return Encrypter.encryptString(getRole()+","+timeStamp, Encrypter.generateKeyFromString("toserver"));
       } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
         return null;
       }
@@ -133,8 +133,7 @@ public class TokenService {
    *
    */
   private static class Encrypter {
-    private static final byte[] symKeyData = DatatypeConverter.parseHexBinary("ClientTokenKey");
-    private static final SecretKeySpec desKey = new SecretKeySpec(symKeyData, "AES");
+    private static final SecretKeySpec desKey = new SecretKeySpec("clitoken".getBytes(), "DES");
     
     /**
      * 
@@ -142,8 +141,7 @@ public class TokenService {
      * @return SecretKey
      */
     private static SecretKey generateKeyFromString(String str) {
-      final byte[] symKeyData = DatatypeConverter.parseHexBinary(str);
-      final SecretKeySpec desKey = new SecretKeySpec(symKeyData, "AES");
+      final SecretKeySpec desKey = new SecretKeySpec(str.getBytes(), "DES");
       return desKey;
     }
     
