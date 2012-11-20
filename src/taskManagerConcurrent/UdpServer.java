@@ -127,6 +127,8 @@ public class UdpServer {
       
 	  Task task = null;
 	  
+	  System.out.println("Received message.");
+	  
 	  if(msgParts.length > 1) {
 		  task = taskList.getTask(msgParts[1].trim());
 	  }
